@@ -1,0 +1,45 @@
+Vagrant.configure("2") do |config|
+  config.vm.provider "virtualbox" do |vb| 
+    vb.memory = 512
+  end
+  config.vm.define "revproxy" do |revproxy|
+    revproxy.vm.box = "debian/bullseye64"
+    revproxy.vm.network "private_network", ip: "192.168.57.10"
+    revproxy.vm.network "forwarded_port", guest: 80, host: 8080
+    revproxy.vm.hostname = "revproxy"
+    
+    revproxy.vm.provision "shell", inline: <<-SHELL
+      sudo apt update
+      sudo apt install -y nginx
+    SHELL
+  end
+end
+
+
+Vagrant.configure("2") do |config|
+  config.vm.define "database" do |database|
+    database.vm.box = "debian/bullseye64"
+    database.vm.network "private_network", ip: "192.168.57.11"
+    database.vm.hostname = "database"
+
+    database.vm.provision "shell", inline: <<-SHELL
+      sudo apt update
+      sudo apt install -y mariadb-server
+      sudo systemctl start mariadb
+      sudo systemctl enable mariadb
+    SHELL
+  end
+end
+
+Vagrant.configure("2") do |config|
+  config.vm.define "flask" do |flask|
+    flask.vm.box = "ubuntu/jammy64"
+    flask.vm.network "private_network", ip: "192.168.57.13"
+    flask.vm.hostname = "flask"
+    
+    flask.vm.provision "shell", inline: <<-SHELL
+      sudo apt update
+      sudo apt install python3-flask
+    SHELL
+  end
+end
